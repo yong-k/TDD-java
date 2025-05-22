@@ -1,2 +1,5 @@
 spring:
   application.name: hhplus-tdd
+
+server:
+  port: 8081
