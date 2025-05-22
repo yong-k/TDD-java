@@ -71,7 +71,7 @@ class PointControllerTest {
         // then
         mockMvc.perform(patch("/point/{id}/charge", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("5000"))   // @RequestBody를 primitive type(long)으로 받고있어서
+                        .content(String.valueOf(amount)))   // @RequestBody를 primitive type(long)으로 받고있어서
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(expected.id()))
                 .andExpect(jsonPath("$.point").value(expected.point()))
