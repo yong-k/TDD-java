@@ -105,8 +105,46 @@ public class PointServiceTest {
                 .hasMessage("포인트는 최대 2,000,000원까지 보유할 수 있습니다.");
     }
 
+    @Test
+    void 포인트사용() {
+        // given
+        long userId = 1L;
+        long amount = 7000;
+        long now = System.currentTimeMillis();
 
-    /**
-     * TODO - 특정 유저의 포인트를 사용하는 기능을 작성해주세요.
-     */
+        // 사용 전 포인트
+        UserPoint beforeUse = new UserPoint(userId, 10000, now);
+        when(userPointTable.selectById(userId)).thenReturn(beforeUse);
+
+        // 사용 후 포인트
+        UserPoint expected = new UserPoint(userId, 3000, now);
+        when(userPointTable.insertOrUpdate(userId, beforeUse.point() - amount)).thenReturn(expected);
+
+        // 사용내역 insert
+        when(pointHistoryTable.insert(eq(userId), eq(amount), eq(TransactionType.USE), anyLong()))
+                .thenReturn(new PointHistory(1L, userId, amount, TransactionType.USE, now));
+
+        // when
+        UserPoint actual = pointService.use(userId, amount);
+
+        // then
+        assertThat(actual.point()).isEqualTo(expected.point());
+    }
+
+    @Test
+    void 포인트사용_포인트부족() {
+        // given
+        long userId = 1L;
+        long now = System.currentTimeMillis();
+
+        // 사용 전 포인트
+        UserPoint beforeUse = new UserPoint(userId, 10000, now);
+        when(userPointTable.selectById(userId)).thenReturn(beforeUse);
+
+        // when
+        // then (보유포인트 < 사용포인트)
+        assertThatThrownBy(() -> pointService.use(userId, beforeUse.point() + 1000))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("포인트가 부족합니다.");
+    }
 }
