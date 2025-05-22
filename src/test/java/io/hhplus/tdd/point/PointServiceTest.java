@@ -2,7 +2,6 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,10 +59,31 @@ public class PointServiceTest {
         assertThat(actual.get(1).type()).isEqualTo(expected.get(1).type());
     }
 
+    @Test
+    void 포인트충전() {
+        // given (포인트충전 -> 충전내역에도 저장)
+        long userId = 1L;
+        long amount = 5000;
+        long now = System.currentTimeMillis();
+        UserPoint expected = new UserPoint(userId, 15000, now);
 
-    /**
-     * TODO - 특정 유저의 포인트를 충전하는 기능을 작성해주세요.
-     */
+        // 충전하기 전 포인트
+        UserPoint beforeCharge = new UserPoint(userId, 10000, now);
+        when(userPointTable.selectById(userId)).thenReturn(beforeCharge);
+
+        // 충전 후 포인트
+        when(userPointTable.insertOrUpdate(userId, beforeCharge.point() + amount)).thenReturn(expected);
+
+        // 충전내역 insert
+        when(pointHistoryTable.insert(userId, amount, TransactionType.CHARGE, now))
+                .thenReturn(new PointHistory(1L, userId, amount, TransactionType.CHARGE, now));
+
+        // when
+        UserPoint actual = pointService.charge(userId, amount);
+
+        // then
+        assertThat(actual.point()).isEqualTo(expected.point());
+    }
 
 
     /**
