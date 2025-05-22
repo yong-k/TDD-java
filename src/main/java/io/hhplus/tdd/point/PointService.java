@@ -42,4 +42,17 @@ public class PointService {
 
         return afterCharge;
     }
+
+    public UserPoint use(long userId, long amount) {
+        UserPoint beforeUse = userPointTable.selectById(userId);
+
+        // 보유포인트 < 사용포인트 체크
+        if (beforeUse.point() < amount)
+            throw new IllegalArgumentException("포인트가 부족합니다.");
+
+        UserPoint afterUse = userPointTable.insertOrUpdate(userId, beforeUse.point() - amount);
+        pointHistoryTable.insert(userId, amount, TransactionType.USE, System.currentTimeMillis());
+
+        return afterUse;
+    }
 }
