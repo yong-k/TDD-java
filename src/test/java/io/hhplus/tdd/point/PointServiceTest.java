@@ -75,7 +75,7 @@ public class PointServiceTest {
         when(userPointTable.insertOrUpdate(userId, beforeCharge.point() + amount)).thenReturn(expected);
 
         // 충전내역 insert
-        when(pointHistoryTable.insert(userId, amount, TransactionType.CHARGE, now))
+        when(pointHistoryTable.insert(eq(userId), eq(amount), eq(TransactionType.CHARGE), anyLong()))
                 .thenReturn(new PointHistory(1L, userId, amount, TransactionType.CHARGE, now));
 
         // when
@@ -85,7 +85,7 @@ public class PointServiceTest {
         assertThat(actual.point()).isEqualTo(expected.point());
         assertThatThrownBy(() -> pointService.charge(userId, 2000001))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("1회 최대 충전 금액은 2,000,000원입니다.");
+                .hasMessage("1회 최대 충전 금액은 2,000,000원입니다.");
     }
 
     @Test
