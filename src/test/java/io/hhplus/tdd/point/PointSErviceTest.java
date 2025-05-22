@@ -23,14 +23,15 @@ class PointServiceTest {
     void 포인트조회() {
         // given
         long id = 1L;
-        UserPoint userPoint = new UserPoint(1L, 1000, System.currentTimeMillis());
-        when(userPointTable.selectById(id)).thenReturn(userPoint);
+        UserPoint expected = new UserPoint(id, 1000, System.currentTimeMillis());
+        when(userPointTable.selectById(id)).thenReturn(expected);
+
 
         // when
-        UserPoint result = pointService.selectById(id);
+        UserPoint actual = pointService.selectById(id);
 
         // then
-        assertThat(result.point()).isEqualTo(1000);
+        assertThat(actual.point()).isEqualTo(expected.point());
     }
 
 
