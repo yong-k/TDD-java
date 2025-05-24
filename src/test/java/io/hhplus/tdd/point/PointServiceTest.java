@@ -41,6 +41,19 @@ public class PointServiceTest {
     }
 
     @Test
+    void 포인트조회_존재하지_않는_사용자_조회() {
+        // given
+        long id = 9999L;
+        when(userPointRepository.selectById(id)).thenReturn(null);
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.selectById(id))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 유저의 포인트 정보가 존재하지 않습니다.");
+    }
+
+    @Test
     void 포인트내역조회() {
         // given
         long userId = 1L;
