@@ -92,7 +92,6 @@ public class PointServiceTest {
     void 포인트충전_최대잔고초과() {
         // given
         long userId = 1L;
-        long amount = 10000;
 
         // 이미 최대 잔고 (2,000,000)
         UserPoint beforeCharge = new UserPoint(userId, 2000000, System.currentTimeMillis());
@@ -103,6 +102,18 @@ public class PointServiceTest {
         assertThatThrownBy(() -> pointService.charge(userId, 10000))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("포인트는 최대 2,000,000원까지 보유할 수 있습니다.");
+    }
+
+    @Test
+    void 포인트충전_음수() {
+        // given
+        long userId = 1L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.charge(userId, -1000))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("충전 금액은 0보다 커야합니다.");
     }
 
     @Test
