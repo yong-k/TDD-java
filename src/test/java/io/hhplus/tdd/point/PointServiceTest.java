@@ -158,4 +158,16 @@ public class PointServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("포인트가 부족합니다.");
     }
+
+    @Test
+    void 포인트사용_음수() {
+        // given
+        long userId = 1L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.use(userId, -1000))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("사용 금액은 0보다 커야합니다.");
+    }
 }
