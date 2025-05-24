@@ -61,6 +61,10 @@ public class PointService {
     public UserPoint use(long userId, long amount) {
         // 동시성 처리
         synchronized (getLock(userId)) {
+            // 음수 체크
+            if (amount <= 0)
+                throw new IllegalArgumentException("사용 금액은 0보다 커야합니다.");
+
             UserPoint beforeUse = userPointRepository.selectById(userId);
 
             // 보유포인트 < 사용포인트 체크
