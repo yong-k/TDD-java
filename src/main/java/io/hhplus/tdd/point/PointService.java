@@ -26,7 +26,10 @@ public class PointService {
     }
 
     public UserPoint selectById(long id) {
-        return userPointRepository.selectById(id);
+        UserPoint userPoint = userPointRepository.selectById(id);
+        if (userPoint == null)
+            throw new IllegalArgumentException("해당 유저의 포인트 정보가 존재하지 않습니다.");
+        return userPoint;
     }
 
     public List<PointHistory> selectHistoryById(long userId) {

@@ -19,7 +19,7 @@ public class UserPointTable implements UserPointRepository {
     @Override
     public UserPoint selectById(long id) {
         throttle(200);
-        return table.getOrDefault(id, UserPoint.empty(id));
+        return table.get(id);
     }
 
     @Override
