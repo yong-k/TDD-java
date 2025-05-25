@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
@@ -20,11 +21,12 @@ public class PointService {
     private static final int MAX_CHARGE = 2_000_000;    // 1회 최대 충전 가능 포인트
     private static final int MAX_POINT = 2_000_000;     // 최대 보유 가능 포인트
 
-    // userId 별로 Lock객체(빈 Object 인스턴스) 만들어서 관리
-    private final ConcurrentHashMap<Long, Object> userLock = new ConcurrentHashMap<>();
+    // userId 별로 ReentrantLock 객체를 생성 및 관리
+    private final ConcurrentHashMap<Long, ReentrantLock> lockMap = new ConcurrentHashMap<>();
 
-    private Object getLock(long userId) {
-        return userLock.computeIfAbsent(userId, id -> new Object());
+    private ReentrantLock getLock(long userId) {
+        // 공정 모드 : 요청 순서대로 락을 획득한다. (fairness를 true로 설정)
+        return lockMap.computeIfAbsent(userId, id -> new ReentrantLock(true));
     }
 
     public UserPoint selectById(long id) {
@@ -39,8 +41,10 @@ public class PointService {
     }
 
     public UserPoint charge(long userId, long amount) {
-        // 동시성 처리
-        synchronized (getLock(userId)) {
+        // 동시성 제어 (userId별 요청 순서 보장)
+        ReentrantLock lock = getLock(userId);
+        lock.lock();    // 락 획득 (공정한 순서로)
+        try {
             // 음수 체크
             if (amount <= 0)
                 throw new PointPolicyViolationException("충전 금액은 0보다 커야합니다.");
@@ -60,12 +64,16 @@ public class PointService {
             pointHistoryRepository.insert(userId, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
             return afterCharge;
+        } finally {
+            lock.unlock();  // 락 해제
         }
     }
 
     public UserPoint use(long userId, long amount) {
-        // 동시성 처리
-        synchronized (getLock(userId)) {
+        // 동시성 제어 (userId별 요청 순서 보장)
+        ReentrantLock lock = getLock(userId);
+        lock.lock();    // 락 획득 (공정한 순서로)
+        try {
             // 음수 체크
             if (amount <= 0)
                 throw new PointPolicyViolationException("사용 금액은 0보다 커야합니다.");
@@ -80,6 +88,8 @@ public class PointService {
             pointHistoryRepository.insert(userId, amount, TransactionType.USE, System.currentTimeMillis());
 
             return afterUse;
+        } finally {
+            lock.unlock();  // 락 해제
         }
     }
 }
