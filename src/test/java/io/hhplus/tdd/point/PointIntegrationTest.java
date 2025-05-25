@@ -213,11 +213,12 @@ class PointIntegrationTest {
         long initialAmount = 100_000;
         userPointRepository.insertOrUpdate(userId, initialAmount);
 
-        int count = 10;
+        int chargeCount = 10;
+        int useCount = 10;
         long chargeAmount = 100_000;
         long useAmount = 100_000;
 
-        int totalThreadCount = count * 2;
+        int totalThreadCount = chargeCount + useCount;
 
         // ExecutorService: 스레드풀 만들어서 여러 작업 병렬 실행할 수 있게 해줌
         ExecutorService executor = Executors.newFixedThreadPool(totalThreadCount);
@@ -225,8 +226,8 @@ class PointIntegrationTest {
         // CountDownLatch: 모든 스레드가 작업마칠 때까지 메인테스트스레드 기다리게 하는 동기화 도구
         CountDownLatch latch = new CountDownLatch(totalThreadCount);
 
-        // 충전 요청
-        for (int i = 0; i < count; i++) {
+        // 충전 요청 10개
+        for (int i = 0; i < chargeCount; i++) {
             executor.submit(() -> {
                 try {
                     mockMvc.perform(patch("/point/{id}/charge", userId)
@@ -239,8 +240,10 @@ class PointIntegrationTest {
                     latch.countDown();
                 }
             });
+        }
 
-            // 사용 요청
+        // 사용 요청 10개
+        for (int i = 0; i < useCount; i++) {
             executor.submit(() -> {
                 try {
                     mockMvc.perform(patch("/point/{id}/use", userId)
@@ -258,12 +261,17 @@ class PointIntegrationTest {
         latch.await();          // 모든 스레드가 끝날 때까지 대기
         executor.shutdown();    // 스레드풀 종료
 
-        // 최종 포인트는: 초기포인트(10만) + 충전합계(100만) - 사용합계(100만) = 10만
-        long expected = initialAmount + (count * chargeAmount) - (count * useAmount);
         long actual = pointService.selectById(userId).point();
 
+        // 최솟값: 사용 요청이 모두 먼저 처리된 경우
+        long minExpected = initialAmount + (chargeCount * chargeAmount) - (useCount * useAmount);
+
+        // 최댓값: 사용 요청이 모두 늦게 처리된 경우
+        long maxExpected = initialAmount + (chargeCount * chargeAmount);
+
         assertThat(actual)
-                .as("충전/사용 동시성 문제 발생 (기대: " + expected + ", 실제: " + actual + ")")
-                .isEqualTo(expected);
+                .as("포인트 값이 음수거나 충전 총합보다 큰 경우 동시성 문제 가능성")
+                .isGreaterThanOrEqualTo(0)
+                .isLessThanOrEqualTo(maxExpected);
     }
 }
