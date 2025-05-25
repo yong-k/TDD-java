@@ -3,7 +3,6 @@ package io.hhplus.tdd.database;
 import io.hhplus.tdd.point.UserPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -17,7 +16,7 @@ class UserPointTableTest {
     }
 
     @Test
-    void 포인트조회() {
+    void selectById_포인트조회() {
         // given
         long userId = 1L;
         UserPoint expected = userPointTable.insertOrUpdate(userId, 10000);
@@ -28,6 +27,11 @@ class UserPointTableTest {
         // then
         assertThat(actual.id()).isEqualTo(expected.id());
         assertThat(actual.point()).isEqualTo(expected.point());
+    }
+
+    @Test
+    void selectById_존재하지않을때_null반환() {
+        assertThat(userPointTable.selectById(999L)).isNull();
     }
 
     @Test
