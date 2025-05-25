@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.exception.DataNotFoundException;
 import io.hhplus.tdd.exception.PointPolicyViolationException;
+import io.hhplus.tdd.point.lock.LockManager;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ public class PointServiceTest {
 
     @Mock
     private PointHistoryRepository pointHistoryRepository;
+
+    @Mock
+    private LockManager lockManager;
 
     @Test
     void 포인트조회() {
@@ -81,6 +85,9 @@ public class PointServiceTest {
         long now = System.currentTimeMillis();
         UserPoint expected = new UserPoint(userId, 15000, now);
 
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
+
         // 충전하기 전 포인트
         UserPoint beforeCharge = new UserPoint(userId, 10000, now);
         when(userPointRepository.selectById(userId)).thenReturn(beforeCharge);
@@ -110,6 +117,9 @@ public class PointServiceTest {
         UserPoint beforeCharge = new UserPoint(userId, 2000000, System.currentTimeMillis());
         when(userPointRepository.selectById(userId)).thenReturn(beforeCharge);
 
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
+
         // when
         // then (정책: 보유 포인트는 최대 2,000,000)
         assertThatThrownBy(() -> pointService.charge(userId, 10000))
@@ -123,6 +133,9 @@ public class PointServiceTest {
         UserPoint expected = new UserPoint(userId, 10000, System.currentTimeMillis());
         when(userPointRepository.selectById(userId)).thenReturn(expected);
 
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
+
         // when
         // then
         assertThatThrownBy(() -> pointService.charge(userId, -1000))
@@ -135,6 +148,9 @@ public class PointServiceTest {
         long userId = 1L;
         long amount = 7000;
         long now = System.currentTimeMillis();
+
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
 
         // 사용 전 포인트
         UserPoint beforeUse = new UserPoint(userId, 10000, now);
@@ -165,6 +181,9 @@ public class PointServiceTest {
         UserPoint beforeUse = new UserPoint(userId, 10000, now);
         when(userPointRepository.selectById(userId)).thenReturn(beforeUse);
 
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
+
         // when
         // then (보유포인트 < 사용포인트)
         assertThatThrownBy(() -> pointService.use(userId, beforeUse.point() + 1000))
@@ -177,6 +196,9 @@ public class PointServiceTest {
         long userId = 1L;
         UserPoint expected = new UserPoint(userId, 10000, System.currentTimeMillis());
         when(userPointRepository.selectById(userId)).thenReturn(expected);
+
+        // LockManager가 락 객체 반환하도록 설정
+        when(lockManager.getLock(userId)).thenReturn(new Object());
 
         // when
         // then

@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.exception.DataNotFoundException;
 import io.hhplus.tdd.exception.PointPolicyViolationException;
+import io.hhplus.tdd.point.lock.LockManager;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +17,7 @@ public class PointService {
 
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
-
-    // userId 별로 Lock객체(빈 Object 인스턴스) 만들어서 관리
-    private final ConcurrentHashMap<Long, Object> userLock = new ConcurrentHashMap<>();
-
-    private Object getLock(long userId) {
-        return userLock.computeIfAbsent(userId, id -> new Object());
-    }
+    private final LockManager lockManager;
 
     /**
      * 주어진 사용자 ID에 해당하는 포인트 정보를 조회합니다.
@@ -64,7 +59,7 @@ public class PointService {
      */
     public UserPoint charge(long userId, long amount) {
         // 동시성 처리
-        synchronized (getLock(userId)) {
+        synchronized (lockManager.getLock(userId)) {
             // 충전 전 UserPoint 객체
             UserPoint beforeCharge = userPointRepository.selectById(userId);
 
@@ -96,7 +91,7 @@ public class PointService {
      */
     public UserPoint use(long userId, long amount) {
         // 동시성 처리
-        synchronized (getLock(userId)) {
+        synchronized (lockManager.getLock(userId)) {
             // 사용 전 UserPoint 객체
             UserPoint beforeUse = userPointRepository.selectById(userId);
 
