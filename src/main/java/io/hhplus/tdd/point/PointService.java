@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.exception.DataNotFoundException;
+import io.hhplus.tdd.exception.PointPolicyViolationException;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,18 +43,18 @@ public class PointService {
         synchronized (getLock(userId)) {
             // 음수 체크
             if (amount <= 0)
-                throw new IllegalArgumentException("충전 금액은 0보다 커야합니다.");
+                throw new PointPolicyViolationException("충전 금액은 0보다 커야합니다.");
 
             // 1회 최대 충전 금액 체크
             if (amount > MAX_CHARGE)
-                throw new IllegalArgumentException("1회 최대 충전 금액은 " + String.format("%,d", MAX_CHARGE) + "원입니다.");
+                throw new PointPolicyViolationException("1회 최대 충전 금액은 " + String.format("%,d", MAX_CHARGE) + "원입니다.");
 
             UserPoint beforeCharge = userPointRepository.selectById(userId);
 
             // 최대 보유 포인트 초과여부 체크
             long afterChargePoint = beforeCharge.point() + amount;
             if (afterChargePoint > MAX_POINT)
-                throw new IllegalArgumentException("포인트는 최대 " + String.format("%,d", MAX_POINT) + "원까지 보유할 수 있습니다.");
+                throw new PointPolicyViolationException("포인트는 최대 " + String.format("%,d", MAX_POINT) + "원까지 보유할 수 있습니다.");
 
             UserPoint afterCharge = userPointRepository.insertOrUpdate(userId, afterChargePoint);
             pointHistoryRepository.insert(userId, amount, TransactionType.CHARGE, System.currentTimeMillis());
@@ -67,13 +68,13 @@ public class PointService {
         synchronized (getLock(userId)) {
             // 음수 체크
             if (amount <= 0)
-                throw new IllegalArgumentException("사용 금액은 0보다 커야합니다.");
+                throw new PointPolicyViolationException("사용 금액은 0보다 커야합니다.");
 
             UserPoint beforeUse = userPointRepository.selectById(userId);
 
             // 보유포인트 < 사용포인트 체크
             if (beforeUse.point() < amount)
-                throw new IllegalArgumentException("포인트가 부족합니다.");
+                throw new PointPolicyViolationException("포인트가 부족합니다.");
 
             UserPoint afterUse = userPointRepository.insertOrUpdate(userId, beforeUse.point() - amount);
             pointHistoryRepository.insert(userId, amount, TransactionType.USE, System.currentTimeMillis());
