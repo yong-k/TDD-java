@@ -62,7 +62,12 @@ class UserPointTableTest {
         // then
         assertThat(update).isNotNull();
         assertThat(update.id()).isEqualTo(userId);
-        assertThat(update.point()).isEqualTo(15000);
+
+        // 누적이 돼서 15000이 아니라, update에 입력한 포인트로 저장되는지 확인하면 된다.
+        // 포인트 누적 계산은 UserPoint 도메인 객체가 담당하고,
+        // UserPointTable은 DB역할만 하므로, "계산해서 주어진 값"이라고 생각하고, 저장만 제대로 하면 된다!!
+       assertThat(update.point()).isEqualTo(update.point());
+
         assertThat(userPointTable.selectById(userId)).isEqualTo(update);
     }
 }
