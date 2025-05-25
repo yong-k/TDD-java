@@ -17,6 +17,20 @@ class UserPointTableTest {
     }
 
     @Test
+    void 포인트조회() {
+        // given
+        long userId = 1L;
+        UserPoint expected = userPointTable.insertOrUpdate(userId, 10000);
+
+        // when
+        UserPoint actual = userPointTable.selectById(userId);
+
+        // then
+        assertThat(actual.id()).isEqualTo(expected.id());
+        assertThat(actual.point()).isEqualTo(expected.point());
+    }
+
+    @Test
     void insertOrUpdate_신규회원() {
         // given
         long userId = 1L;
