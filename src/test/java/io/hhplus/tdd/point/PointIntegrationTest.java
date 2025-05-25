@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 
+import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +30,12 @@ class PointIntegrationTest {
     @Autowired
     private PointService pointService;
 
+    @Autowired
+    private UserPointRepository userPointRepository;
+
     @BeforeEach
     void prepare() {
-        pointService.charge(1L, 10000);
+        userPointRepository.insertOrUpdate(1L, 10000);
     }
 
     @Test
@@ -163,8 +167,8 @@ class PointIntegrationTest {
 
     @Test
     void 포인트사용_동시성문제() throws InterruptedException {
-        long userId = 2L;
-        pointService.charge(userId, 1_000_000);
+        long userId = 1L;
+        userPointRepository.insertOrUpdate(userId, 1_000_000);
 
         // 10개의 스레드로 각각 10만원씩 사용 시도
         int threadCount = 10;
@@ -205,9 +209,9 @@ class PointIntegrationTest {
 
     @Test
     void 포인트_충전_사용_순차처리테스트() throws InterruptedException {
-        long userId = 3L;
+        long userId = 1L;
         long initialAmount = 100_000;
-        pointService.charge(userId, initialAmount);
+        userPointRepository.insertOrUpdate(userId, initialAmount);
 
         int chargeCount = 10;
         int useCount = 10;
