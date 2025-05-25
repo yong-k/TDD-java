@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.exception.DataNotFoundException;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ public class PointServiceTest {
         // when
         // then
         assertThatThrownBy(() -> pointService.selectById(id))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DataNotFoundException.class)
                 .hasMessage("해당 유저의 포인트 정보가 존재하지 않습니다.");
     }
 

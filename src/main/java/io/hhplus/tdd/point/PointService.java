@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.exception.DataNotFoundException;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class PointService {
     public UserPoint selectById(long id) {
         UserPoint userPoint = userPointRepository.selectById(id);
         if (userPoint == null)
-            throw new IllegalArgumentException("해당 유저의 포인트 정보가 존재하지 않습니다.");
+            throw new DataNotFoundException("해당 유저의 포인트 정보가 존재하지 않습니다.");
         return userPoint;
     }
 
