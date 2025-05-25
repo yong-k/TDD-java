@@ -1,7 +1,9 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.DataNotFoundException;
+import io.hhplus.tdd.exception.PointPolicyViolationException;
+import io.hhplus.tdd.point.repository.PointHistoryRepository;
+import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,23 +23,36 @@ public class PointServiceTest {
     private PointService pointService;
 
     @Mock
-    private UserPointTable userPointTable;
+    private UserPointRepository userPointRepository;
 
     @Mock
-    private PointHistoryTable pointHistoryTable;
+    private PointHistoryRepository pointHistoryRepository;
 
     @Test
     void 포인트조회() {
         // given
         long id = 1L;
         UserPoint expected = new UserPoint(id, 1000, System.currentTimeMillis());
-        when(userPointTable.selectById(id)).thenReturn(expected);
+        when(userPointRepository.selectById(id)).thenReturn(expected);
 
         // when
         UserPoint actual = pointService.selectById(id);
 
         // then
         assertThat(actual.point()).isEqualTo(expected.point());
+    }
+
+    @Test
+    void 포인트조회_존재하지_않는_사용자_조회() {
+        // given
+        long id = 9999L;
+        when(userPointRepository.selectById(id)).thenReturn(null);
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.selectById(id))
+                .isInstanceOf(DataNotFoundException.class)
+                .hasMessage("해당 유저의 포인트 정보가 존재하지 않습니다.");
     }
 
     @Test
@@ -48,7 +63,7 @@ public class PointServiceTest {
         expected.add(new PointHistory(1L, userId, 10000, TransactionType.CHARGE, System.currentTimeMillis()));
         expected.add(new PointHistory(2L, userId, 5000, TransactionType.USE, System.currentTimeMillis()));
         expected.add(new PointHistory(3L, userId, 2000, TransactionType.CHARGE, System.currentTimeMillis()));
-        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(expected);
+        when(pointHistoryRepository.selectAllByUserId(userId)).thenReturn(expected);
 
         // when
         List<PointHistory> actual = pointService.selectHistoryById(userId);
@@ -69,13 +84,13 @@ public class PointServiceTest {
 
         // 충전하기 전 포인트
         UserPoint beforeCharge = new UserPoint(userId, 10000, now);
-        when(userPointTable.selectById(userId)).thenReturn(beforeCharge);
+        when(userPointRepository.selectById(userId)).thenReturn(beforeCharge);
 
         // 충전 후 포인트
-        when(userPointTable.insertOrUpdate(userId, beforeCharge.point() + amount)).thenReturn(expected);
+        when(userPointRepository.insertOrUpdate(userId, beforeCharge.point() + amount)).thenReturn(expected);
 
         // 충전내역 insert
-        when(pointHistoryTable.insert(eq(userId), eq(amount), eq(TransactionType.CHARGE), anyLong()))
+        when(pointHistoryRepository.insert(eq(userId), eq(amount), eq(TransactionType.CHARGE), anyLong()))
                 .thenReturn(new PointHistory(1L, userId, amount, TransactionType.CHARGE, now));
 
         // when
@@ -84,7 +99,7 @@ public class PointServiceTest {
         // then (정책: 1회 최대 충전금액은 2,000,000)
         assertThat(actual.point()).isEqualTo(expected.point());
         assertThatThrownBy(() -> pointService.charge(userId, 2000001))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(PointPolicyViolationException.class)
                 .hasMessage("1회 최대 충전 금액은 2,000,000원입니다.");
     }
 
@@ -92,17 +107,28 @@ public class PointServiceTest {
     void 포인트충전_최대잔고초과() {
         // given
         long userId = 1L;
-        long amount = 10000;
 
         // 이미 최대 잔고 (2,000,000)
         UserPoint beforeCharge = new UserPoint(userId, 2000000, System.currentTimeMillis());
-        when(userPointTable.selectById(userId)).thenReturn(beforeCharge);
+        when(userPointRepository.selectById(userId)).thenReturn(beforeCharge);
 
         // when
         // then (정책: 보유 포인트는 최대 2,000,000)
         assertThatThrownBy(() -> pointService.charge(userId, 10000))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(PointPolicyViolationException.class)
                 .hasMessage("포인트는 최대 2,000,000원까지 보유할 수 있습니다.");
+    }
+
+    @Test
+    void 포인트충전_음수() {
+        // given
+        long userId = 1L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.charge(userId, -1000))
+                .isInstanceOf(PointPolicyViolationException.class)
+                .hasMessage("충전 금액은 0보다 커야합니다.");
     }
 
     @Test
@@ -114,14 +140,14 @@ public class PointServiceTest {
 
         // 사용 전 포인트
         UserPoint beforeUse = new UserPoint(userId, 10000, now);
-        when(userPointTable.selectById(userId)).thenReturn(beforeUse);
+        when(userPointRepository.selectById(userId)).thenReturn(beforeUse);
 
         // 사용 후 포인트
         UserPoint expected = new UserPoint(userId, 3000, now);
-        when(userPointTable.insertOrUpdate(userId, beforeUse.point() - amount)).thenReturn(expected);
+        when(userPointRepository.insertOrUpdate(userId, beforeUse.point() - amount)).thenReturn(expected);
 
         // 사용내역 insert
-        when(pointHistoryTable.insert(eq(userId), eq(amount), eq(TransactionType.USE), anyLong()))
+        when(pointHistoryRepository.insert(eq(userId), eq(amount), eq(TransactionType.USE), anyLong()))
                 .thenReturn(new PointHistory(1L, userId, amount, TransactionType.USE, now));
 
         // when
@@ -139,12 +165,24 @@ public class PointServiceTest {
 
         // 사용 전 포인트
         UserPoint beforeUse = new UserPoint(userId, 10000, now);
-        when(userPointTable.selectById(userId)).thenReturn(beforeUse);
+        when(userPointRepository.selectById(userId)).thenReturn(beforeUse);
 
         // when
         // then (보유포인트 < 사용포인트)
         assertThatThrownBy(() -> pointService.use(userId, beforeUse.point() + 1000))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(PointPolicyViolationException.class)
                 .hasMessage("포인트가 부족합니다.");
+    }
+
+    @Test
+    void 포인트사용_음수() {
+        // given
+        long userId = 1L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> pointService.use(userId, -1000))
+                .isInstanceOf(PointPolicyViolationException.class)
+                .hasMessage("사용 금액은 0보다 커야합니다.");
     }
 }
