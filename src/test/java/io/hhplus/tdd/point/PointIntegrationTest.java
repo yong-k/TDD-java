@@ -213,12 +213,11 @@ class PointIntegrationTest {
         long initialAmount = 100_000;
         userPointRepository.insertOrUpdate(userId, initialAmount);
 
-        int chargeCount = 10;
-        int useCount = 10;
+        int count = 10;
         long chargeAmount = 100_000;
         long useAmount = 100_000;
 
-        int totalThreadCount = chargeCount + useCount;
+        int totalThreadCount = count * 2;
 
         // ExecutorService: 스레드풀 만들어서 여러 작업 병렬 실행할 수 있게 해줌
         ExecutorService executor = Executors.newFixedThreadPool(totalThreadCount);
@@ -226,8 +225,8 @@ class PointIntegrationTest {
         // CountDownLatch: 모든 스레드가 작업마칠 때까지 메인테스트스레드 기다리게 하는 동기화 도구
         CountDownLatch latch = new CountDownLatch(totalThreadCount);
 
-        // 충전 요청 10개
-        for (int i = 0; i < chargeCount; i++) {
+        // 충전 요청
+        for (int i = 0; i < count; i++) {
             executor.submit(() -> {
                 try {
                     mockMvc.perform(patch("/point/{id}/charge", userId)
@@ -240,10 +239,8 @@ class PointIntegrationTest {
                     latch.countDown();
                 }
             });
-        }
 
-        // 사용 요청 10개
-        for (int i = 0; i < useCount; i++) {
+            // 사용 요청
             executor.submit(() -> {
                 try {
                     mockMvc.perform(patch("/point/{id}/use", userId)
@@ -262,7 +259,7 @@ class PointIntegrationTest {
         executor.shutdown();    // 스레드풀 종료
 
         // 최종 포인트는: 초기포인트(10만) + 충전합계(100만) - 사용합계(100만) = 10만
-        long expected = initialAmount + (chargeCount * chargeAmount) - (useCount * useAmount);
+        long expected = initialAmount + (count * chargeAmount) - (count * useAmount);
         long actual = pointService.selectById(userId).point();
 
         assertThat(actual)
