@@ -25,6 +25,8 @@ public class UserPointTable implements UserPointRepository {
     @Override
     public UserPoint insertOrUpdate(long id, long amount) {
         throttle(300);
+        if (table.containsKey(id))
+            amount = table.get(id).point() + amount;
         UserPoint userPoint = new UserPoint(id, amount, System.currentTimeMillis());
         table.put(id, userPoint);
         return userPoint;
