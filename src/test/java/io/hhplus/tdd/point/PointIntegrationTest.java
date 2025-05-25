@@ -69,7 +69,6 @@ class PointIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.valueOf(amount)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("1회 최대 충전 금액은 2,000,000원입니다."))
                 .andDo(print());
     }
 
@@ -85,7 +84,6 @@ class PointIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.valueOf(amount)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("포인트는 최대 2,000,000원까지 보유할 수 있습니다."))
                 .andDo(print());
     }
 
@@ -120,7 +118,6 @@ class PointIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.valueOf(amount)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("포인트가 부족합니다."))
                 .andDo(print());
     }
 

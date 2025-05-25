@@ -120,6 +120,8 @@ public class PointServiceTest {
     void 포인트충전_음수() {
         // given
         long userId = 1L;
+        UserPoint expected = new UserPoint(userId, 10000, System.currentTimeMillis());
+        when(userPointRepository.selectById(userId)).thenReturn(expected);
 
         // when
         // then
@@ -173,6 +175,8 @@ public class PointServiceTest {
     void 포인트사용_음수() {
         // given
         long userId = 1L;
+        UserPoint expected = new UserPoint(userId, 10000, System.currentTimeMillis());
+        when(userPointRepository.selectById(userId)).thenReturn(expected);
 
         // when
         // then
