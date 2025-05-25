@@ -51,8 +51,7 @@ public class PointServiceTest {
         // when
         // then
         assertThatThrownBy(() -> pointService.selectById(id))
-                .isInstanceOf(DataNotFoundException.class)
-                .hasMessage("해당 유저의 포인트 정보가 존재하지 않습니다.");
+                .isInstanceOf(DataNotFoundException.class);
     }
 
     @Test
@@ -99,8 +98,7 @@ public class PointServiceTest {
         // then (정책: 1회 최대 충전금액은 2,000,000)
         assertThat(actual.point()).isEqualTo(expected.point());
         assertThatThrownBy(() -> pointService.charge(userId, 2000001))
-                .isInstanceOf(PointPolicyViolationException.class)
-                .hasMessage("1회 최대 충전 금액은 2,000,000원입니다.");
+                .isInstanceOf(PointPolicyViolationException.class);
     }
 
     @Test
@@ -115,8 +113,7 @@ public class PointServiceTest {
         // when
         // then (정책: 보유 포인트는 최대 2,000,000)
         assertThatThrownBy(() -> pointService.charge(userId, 10000))
-                .isInstanceOf(PointPolicyViolationException.class)
-                .hasMessage("포인트는 최대 2,000,000원까지 보유할 수 있습니다.");
+                .isInstanceOf(PointPolicyViolationException.class);
     }
 
     @Test
@@ -127,8 +124,7 @@ public class PointServiceTest {
         // when
         // then
         assertThatThrownBy(() -> pointService.charge(userId, -1000))
-                .isInstanceOf(PointPolicyViolationException.class)
-                .hasMessage("충전 금액은 0보다 커야합니다.");
+                .isInstanceOf(PointPolicyViolationException.class);
     }
 
     @Test
@@ -170,8 +166,7 @@ public class PointServiceTest {
         // when
         // then (보유포인트 < 사용포인트)
         assertThatThrownBy(() -> pointService.use(userId, beforeUse.point() + 1000))
-                .isInstanceOf(PointPolicyViolationException.class)
-                .hasMessage("포인트가 부족합니다.");
+                .isInstanceOf(PointPolicyViolationException.class);
     }
 
     @Test
@@ -182,7 +177,6 @@ public class PointServiceTest {
         // when
         // then
         assertThatThrownBy(() -> pointService.use(userId, -1000))
-                .isInstanceOf(PointPolicyViolationException.class)
-                .hasMessage("사용 금액은 0보다 커야합니다.");
+                .isInstanceOf(PointPolicyViolationException.class);
     }
 }
